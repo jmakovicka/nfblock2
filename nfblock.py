@@ -58,7 +58,7 @@ def read_blocklist(name):
 
             r = p2p_re.match(l)
             if r:
-                addr_list.append((r.group('range_start'), r.group('range_end')))
+                addr_list.append((r.group('range_start'), r.group('range_end'), r.group('name')))
             else:
                 raise CLIError('Parse error: ' + l)
 
@@ -122,11 +122,11 @@ USAGE
     with open(output_file, mode='w') as ostream:
         ostream.write(f'flush set {table_name} {set_name}\n')
         for a in addr_list:
-            s, e = a
+            s, e, n = a
             if s != e:
-                ostream.write(f'add element {table_name} {set_name} {{ {s}-{e} }}\n')
+                ostream.write(f'add element {table_name} {set_name} {{ {s}-{e} }} # {n} \n')
             else:
-                ostream.write(f'add element {table_name} {set_name} {{ {s} }}\n')
+                ostream.write(f'add element {table_name} {set_name} {{ {s} }} # {n}\n')
 
     return 0
 
