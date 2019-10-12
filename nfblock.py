@@ -170,7 +170,8 @@ USAGE
                     e = r.group('range_end') or r.group('range_start')
                     addr_map[r.group('range_start')] = (e, r.group('name').strip())
 
-        res = subprocess.run([NFT_PATH, '--json', 'list', 'table', 'inet', 'filter'], capture_output=True)
+        res = subprocess.run([NFT_PATH, '--json', 'list', 'table', family_name, table_name],
+                             capture_output=True)
         res.check_returncode()
 
         nft_output = json.loads(res.stdout)
@@ -192,7 +193,7 @@ USAGE
 
         for counter in hit_list:
             info = addr_map.get(counter['name'], ('?', '(unknown)'))
-            logging.warning(f"{counter['name']}-{info[0]} {info[1]}"
+            logging.warning(f"{counter['name']}-{info[0]} {info[1]} "
                             f"packets: {counter['packets']} bytes: {counter['bytes']}")
 
         return 0
