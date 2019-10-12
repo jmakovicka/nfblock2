@@ -86,8 +86,9 @@ USAGE
     # Setup argument parser
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-b", "--blocklist", dest="blocklist", help="Blocklists to download  [default: %(default)s]", default=['bt_level1'])
-    parser.add_argument("-t", "--table-name", dest="table_name", help="Name of the netfilter table  [default: %(default)s]", default='inet filter')
-    parser.add_argument("-s", "--set-name", dest="set_name", help="Name of the blocklist set  [default: %(default)s]", default='blocklist')
+    parser.add_argument("-f", "--family", dest="family_name", help="Name of the netfilter family  [default: %(default)s]", default='inet')
+    parser.add_argument("-t", "--table", dest="table_name", help="Name of the netfilter table  [default: %(default)s]", default='filter')
+    parser.add_argument("-s", "--set", dest="set_name", help="Name of the blocklist set  [default: %(default)s]", default='blocklist')
     parser.add_argument("-c", "--counter-map-name", dest="counter_map_name", help="Name of the blocklist counter map [default: %(default)s]")
     parser.add_argument("-o", "--output-file", dest="output_file", help="Output file path  [default: %(default)s]", default='/var/lib/nfblock/nfblock.nft')
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
@@ -122,25 +123,25 @@ USAGE
     logging.info(f'Writing nftables config: {output_file}')
 
     with open(output_file, mode='w') as ostream:
-        ostream.write(f'flush set {table_name} {set_name}\n')
+        ostream.write(f'flush set {family_name} {table_name} {set_name}\n')
 
         if counter_map_name is not None:
-            ostream.write(f'flush map {table_name} {counter_map_name}\n')
+            ostream.write(f'flush map {family_name} {table_name} {counter_map_name}\n')
 
         for a in addr_list:
             s, e, n = a
 
             if s != e:
-                ostream.write(f'add element {table_name} {set_name} {{ {s}-{e} }} # {n} \n')
+                ostream.write(f'add element {family_name} {table_name} {set_name} {{ {s}-{e} }} # {n} \n')
             else:
-                ostream.write(f'add element {table_name} {set_name} {{ {s} }} # {n}\n')
+                ostream.write(f'add element {family_name} {table_name} {set_name} {{ {s} }} # {n}\n')
 
             if counter_map_name is not None:
-                ostream.write(f'add counter {table_name} {s}\n')
+                ostream.write(f'add counter {family_name} {table_name} {s}\n')
                 if s != e:
-                    ostream.write(f'add element {table_name} {counter_map_name} {{ {s}-{e} : {s} }}\n')
+                    ostream.write(f'add element {family_name} {table_name} {counter_map_name} {{ {s}-{e} : {s} }}\n')
                 else:
-                    ostream.write(f'add element {table_name} {counter_map_name} {{ {s} : {s} }}\n')
+                    ostream.write(f'add element {family_name} {table_name} {counter_map_name} {{ {s} : {s} }}\n')
 
 
     return 0
