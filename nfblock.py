@@ -84,8 +84,6 @@ def main(argv=None):  # IGNORE:C0111
     program_version_message = f'%(prog)s {program_version} ({program_build_date})'
     program_shortdesc = __import__('__main__').__doc__.split("\n")[1]
     program_license = f'''{program_shortdesc}
-
-USAGE
 '''
 
     # Setup argument parser
