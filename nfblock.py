@@ -90,15 +90,15 @@ USAGE
 
     # Setup argument parser
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("-d", "--download", dest="download", action="store_true", help="Download the blocklist")
-    parser.add_argument("-l", "--list-stats", dest="list_stats", action="store_true", help="List the hit sattistics")
-    parser.add_argument("-b", "--blocklist", dest="blocklist", help="Blocklists to download  [default: %(default)s]", default=['bt_level1'])
-    parser.add_argument("-f", "--family", dest="family_name", help="Name of the netfilter family  [default: %(default)s]", default='inet')
-    parser.add_argument("-t", "--table", dest="table_name", help="Name of the netfilter table  [default: %(default)s]", default='filter')
-    parser.add_argument("-s", "--set", dest="set_name", help="Name of the blocklist set  [default: %(default)s]", default='blocklist')
-    parser.add_argument("-c", "--counter-map-name", dest="counter_map_name", help="Name of the blocklist counter map [default: %(default)s]")
-    parser.add_argument("-o", "--output-file", dest="output_file", help="Output file path  [default: %(default)s]", default='/var/lib/nfblock/nfblock.nft')
-    parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="Set verbosity level [default: %(default)s]")
+    parser.add_argument("-d", "--download", dest="download", action="store_true", help="download the blocklist")
+    parser.add_argument("-l", "--list-stats", dest="list_stats", action="store_true", help="list the hit sattistics")
+    parser.add_argument("-b", "--blocklist", dest="blocklist", help="blocklists to download  [default: %(default)s]", default=['bt_level1'])
+    parser.add_argument("-f", "--family", dest="family_name", help="name of the netfilter family  [default: %(default)s]", default='inet')
+    parser.add_argument("-t", "--table", dest="table_name", help="name of the netfilter table  [default: %(default)s]", default='filter')
+    parser.add_argument("-s", "--set", dest="set_name", help="name of the blocklist set  [default: %(default)s]", default='blocklist')
+    parser.add_argument("-c", "--counter-map-name", dest="counter_map_name", help="name of the blocklist counter map [default: %(default)s]")
+    parser.add_argument("-o", "--output-file", dest="output_file", help="output file path  [default: %(default)s]", default='/var/lib/nfblock/nfblock.nft')
+    parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
     parser.add_argument('-V', '--version', action='version', version=program_version_message)
 
     # Process arguments
