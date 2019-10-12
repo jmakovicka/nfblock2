@@ -91,10 +91,10 @@ def main(argv=None):  # IGNORE:C0111
     parser.add_argument("-d", "--download", dest="download", action="store_true", help="download the blocklist")
     parser.add_argument("-l", "--list-stats", dest="list_stats", action="store_true", help="list the hit sattistics")
     parser.add_argument("-b", "--blocklist", dest="blocklist", help="blocklists to download  [default: %(default)s]", default=['bt_level1'])
-    parser.add_argument("-f", "--family", dest="family_name", help="name of the netfilter family  [default: %(default)s]", default='inet')
-    parser.add_argument("-t", "--table", dest="table_name", help="name of the netfilter table  [default: %(default)s]", default='filter')
-    parser.add_argument("-s", "--set", dest="set_name", help="name of the blocklist set  [default: %(default)s]", default='blocklist')
-    parser.add_argument("-c", "--counter-map-name", dest="counter_map_name", help="name of the blocklist counter map [default: %(default)s]")
+    parser.add_argument("-f", "--family", dest="family", help="name of the netfilter family  [default: %(default)s]", default='inet')
+    parser.add_argument("-t", "--table", dest="table", help="name of the netfilter table  [default: %(default)s]", default='filter')
+    parser.add_argument("-s", "--set", dest="set", help="name of the blocklist set  [default: %(default)s]", default='blocklist')
+    parser.add_argument("-c", "--counter-map", dest="counter_map", help="name of the blocklist counter map [default: %(default)s]")
     parser.add_argument("-o", "--output-file", dest="output_file", help="output file path  [default: %(default)s]", default='/var/lib/nfblock/nfblock.nft')
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
     parser.add_argument('-V', '--version', action='version', version=program_version_message)
@@ -105,10 +105,10 @@ def main(argv=None):  # IGNORE:C0111
     output_file = args.output_file
     blocklist = args.blocklist
     verbose = args.verbose
-    family_name = args.family_name
-    table_name = args.table_name
-    set_name = args.set_name
-    counter_map_name = args.counter_map_name
+    family_name = args.family
+    table_name = args.table
+    set_name = args.set
+    counter_map_name = args.counter_map
 
     if verbose is None:
         log_level = logging.WARNING
