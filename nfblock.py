@@ -175,7 +175,7 @@ USAGE
 
         nft_output = json.loads(res.stdout)
 
-        print('Blocklist hit statistics:')
+        logging.warning('Blocklist hit statistics:')
 
         hit_list = []
 
@@ -192,9 +192,8 @@ USAGE
 
         for counter in hit_list:
             info = addr_map.get(counter['name'], ('?', '(unknown)'))
-            print(f"{counter['name']}-{info[0]}", info[1],
-                  'packets:', counter['packets'],
-                  'bytes:', counter['bytes'])
+            logging.warning(f"{counter['name']}-{info[0]} {info[1]}"
+                            f"packets: {counter['packets']} bytes: {counter['bytes']}")
 
         return 0
 
