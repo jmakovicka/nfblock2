@@ -27,9 +27,10 @@ from argparse import RawDescriptionHelpFormatter
 __all__ = []
 __version__ = 0.1
 __date__ = '2019-09-29'
-__updated__ = '2019-10-12'
+__updated__ = '2019-10-26'
 
 NFT_PATH = '/usr/sbin/nft'
+RE_IP = r'[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
 
 
 class CLIError(Exception):
@@ -49,8 +50,8 @@ class CLIError(Exception):
 def read_blocklist(name):
     logging.info(f'Loading blocklist: {name}')
     url = f'http://list.iblocklist.com/?list={name}&fileformat=p2p&archiveformat=gz'
-    p2p_re = re.compile(r'(?P<name>.+):(?P<range_start>(?:[0-9]+)\.(?:[0-9]+)\.(?:[0-9]+)\.(?:[0-9]+))'
-                        r'-(?P<range_end>(?:[0-9]+)\.(?:[0-9]+)\.(?:[0-9]+)\.(?:[0-9]+))$')
+    p2p_re = re.compile(r'(?P<name>.+):(?P<range_start>' + RE_IP + ')'
+                        r'-(?P<range_end>' + RE_IP + ')$')
 
     addr_list = []
 
@@ -138,17 +139,19 @@ def main(argv=None):  # IGNORE:C0111
             for a in addr_list:
                 s, e, n = a
 
+                ostream.write(f'add element {family_name} {table_name} {set_name} ')
                 if s != e:
-                    ostream.write(f'add element {family_name} {table_name} {set_name} {{ {s}-{e} }} # {n} \n')
+                    ostream.write(f'{{ {s}-{e} }} # {n} \n')
                 else:
-                    ostream.write(f'add element {family_name} {table_name} {set_name} {{ {s} }} # {n}\n')
+                    ostream.write(f'{{ {s} }} # {n}\n')
 
                 if counter_map_name is not None:
                     ostream.write(f'add counter {family_name} {table_name} {s}\n')
+                    ostream.write(f'add element {family_name} {table_name} {counter_map_name} ')
                     if s != e:
-                        ostream.write(f'add element {family_name} {table_name} {counter_map_name} {{ {s}-{e} : {s} }}\n')
+                        ostream.write(f'{{ {s}-{e} : {s} }}\n')
                     else:
-                        ostream.write(f'add element {family_name} {table_name} {counter_map_name} {{ {s} : {s} }}\n')
+                        ostream.write(f'{{ {s} : {s} }}\n')
 
         return 0
 
@@ -158,8 +161,8 @@ def main(argv=None):  # IGNORE:C0111
         with open(output_file) as stream:
             nft_re = re.compile(
                 r'add element (?P<family>\S+) (?P<range>\S+) (?P<set>\S+) '
-                r'{ (?P<range_start>(?:[0-9]+)\.(?:[0-9]+)\.(?:[0-9]+)\.(?:[0-9]+))'
-                r'(?:-(?P<range_end>(?:[0-9]+)\.(?:[0-9]+)\.(?:[0-9]+)\.(?:[0-9]+)))? } '
+                r'{ (?P<range_start>' + RE_IP + ')'
+                r'(?:-(?P<range_end>' + RE_IP + '))? } '
                 r'# (?P<name>.*)$')
 
             for l in stream:
