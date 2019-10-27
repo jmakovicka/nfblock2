@@ -1,6 +1,6 @@
 # nftables blocklist downloader & converter
 
-`nfblock.py` downloads an IP blocklist from `iblocklist.com` and
+`nfblock` downloads an IP blocklist from `iblocklist.com` and
 converts it to a file loadable directly by the `nft` utility.
 
 ## Usage example

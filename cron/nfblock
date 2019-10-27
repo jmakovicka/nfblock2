@@ -4,6 +4,6 @@ set -e
 
 mkdir -p /var/lib/nfblock
 
-/usr/local/sbin/nfblock.py -d
+/usr/local/sbin/nfblock -d
 
 /etc/nftables.conf
