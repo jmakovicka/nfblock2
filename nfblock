@@ -27,7 +27,7 @@ from argparse import RawDescriptionHelpFormatter
 __all__ = []
 __version__ = 0.1
 __date__ = '2019-09-29'
-__updated__ = '2019-10-26'
+__updated__ = '2019-11-10'
 
 NFT_PATH = '/usr/sbin/nft'
 RE_IP = r'[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
@@ -158,9 +158,12 @@ def main(argv=None):  # IGNORE:C0111
     if args.list_stats:
         addr_map = {}
 
+        cfg_family = None
+        cfg_table = None
+
         with open(output_file) as stream:
             nft_re = re.compile(
-                r'add element (?P<family>\S+) (?P<range>\S+) (?P<set>\S+) '
+                r'add element (?P<family>\S+) (?P<table>\S+) (?P<set>\S+) '
                 r'{ (?P<range_start>' + RE_IP + ')'
                 r'(?:-(?P<range_end>' + RE_IP + '))? } '
                 r'# (?P<name>.*)$')
@@ -170,8 +173,10 @@ def main(argv=None):  # IGNORE:C0111
                 if r:
                     e = r.group('range_end') or r.group('range_start')
                     addr_map[r.group('range_start')] = (e, r.group('name').strip())
+                    cfg_family = r.group('family')
+                    cfg_table = r.group('table')
 
-        res = subprocess.run([NFT_PATH, '--json', 'list', 'table', family_name, table_name],
+        res = subprocess.run([NFT_PATH, '--json', 'list', 'table', cfg_family, cfg_table],
                              capture_output=True)
         res.check_returncode()
 
@@ -184,8 +189,8 @@ def main(argv=None):  # IGNORE:C0111
         for entry in nft_output['nftables']:
             if 'counter' in entry:
                 counter = entry['counter']
-                if counter['family'] == family_name and \
-                   counter['table'] == table_name and \
+                if counter['family'] == cfg_family and \
+                   counter['table'] == cfg_table and \
                    counter['packets'] > 0:
 
                     hit_list.append(counter)
