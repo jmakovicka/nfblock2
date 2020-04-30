@@ -20,7 +20,7 @@ flush ruleset
 
 table inet filter {
     set blocklist {
-        type ipv4_addr ; flags interval
+        type ipv4_addr ; flags interval ; auto-merge
     }
 
 # optional counter map

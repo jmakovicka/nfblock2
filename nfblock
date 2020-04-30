@@ -27,7 +27,7 @@ from argparse import RawDescriptionHelpFormatter
 __all__ = []
 __version__ = 0.1
 __date__ = '2019-09-29'
-__updated__ = '2019-11-10'
+__updated__ = '2020-04-30'
 
 NFT_PATH = '/usr/sbin/nft'
 RE_IP = r'[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
@@ -136,16 +136,21 @@ def main(argv=None):  # IGNORE:C0111
             if counter_map_name is not None:
                 ostream.write(f'flush map {family_name} {table_name} {counter_map_name}\n')
 
+            ostream.write(f'define {set_name}_init = {{\n')
             for a in addr_list:
                 s, e, n = a
 
-                ostream.write(f'add element {family_name} {table_name} {set_name} ')
                 if s != e:
-                    ostream.write(f'{{ {s}-{e} }} # {n} \n')
+                    ostream.write(f'{s}-{e}, # {n}\n')
                 else:
-                    ostream.write(f'{{ {s} }} # {n}\n')
+                    ostream.write(f'{s}, # {n}\n')
 
-                if counter_map_name is not None:
+            ostream.write(f'}}\n')
+            ostream.write(f'add element {family_name} {table_name} {set_name} ${set_name}_init\n')
+
+            if counter_map_name is not None:
+                for a in addr_list:
+                    s, e, n = a
                     ostream.write(f'add counter {family_name} {table_name} {s}\n')
                     ostream.write(f'add element {family_name} {table_name} {counter_map_name} ')
                     if s != e:
