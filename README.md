@@ -23,18 +23,12 @@ table inet filter {
         type ipv4_addr ; flags interval ; auto-merge
     }
 
-# optional counter map
-#    map blockcounters {
-#        type ipv4_addr: counter ; flags interval
-#    }
+    set blockcounters { type ipv4_addr ; flags dynamic ; }
 
     chain input {
 ...
         # check against blocklist
-        ct state new ip saddr @blocklist drop
-
-        # for use with counters, change the above to
-        # ct state new ip saddr @blocklist counter name ip saddr map @blockcounters drop
+        ct state new ip saddr @blocklist add @blockcounters { ip saddr counter } drop
 ...
         # count and drop any other traffic
         counter drop
@@ -42,7 +36,7 @@ table inet filter {
 
     chain output {
 ...
-        ct state new,invalid ip daddr @blocklist drop
+        ct state new,invalid ip daddr @blocklist add @blockcounters { ip daddr counter } drop
 ...
         # count and drop any other traffic
         counter drop
