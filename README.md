@@ -7,20 +7,20 @@ converts it to a file loadable directly by the `nft` utility.
 
 The snippet of a `nftables` configuration file below shows how to
 
-- create an empty blocklist set
+- create a blocklist set
 
 - set up rules to filter input and output packets
-
-- feed the set with downloaded and converted blocklist rules
 
 ```
 #!/usr/sbin/nft -f
 
 flush ruleset
 
+include "/var/lib/nfblock/nfblock.nft"
+
 table inet filter {
     set blocklist {
-        type ipv4_addr ; flags interval ; auto-merge
+        type ipv4_addr ; flags constant, interval ; auto-merge ; elements = $blocklist_init
     }
 
     set blockcounters { type ipv4_addr ; flags dynamic ; }
@@ -43,6 +43,4 @@ table inet filter {
     }
 
 }
-
-include "/var/lib/nfblock/nfblock.nft"
 ```
