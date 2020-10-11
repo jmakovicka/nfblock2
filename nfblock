@@ -28,7 +28,7 @@ from argparse import RawDescriptionHelpFormatter
 __all__ = []
 __version__ = 0.1
 __date__ = '2019-09-29'
-__updated__ = '2020-05-02'
+__updated__ = '2020-10-11'
 
 NFT_PATH = '/usr/sbin/nft'
 RE_IP = r'[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
@@ -155,7 +155,7 @@ def main(argv=None):  # IGNORE:C0111
                 r'# (?P<name>.*)$')
 
             for l in stream:
-                r = nft_re.match(l);
+                r = nft_re.match(l)
                 if r:
                     e = r.group('range_end') or r.group('range_start')
                     addr_list.append((ipaddress.ip_address(r.group('range_start')), ipaddress.ip_address(e), r.group('name').strip()))
