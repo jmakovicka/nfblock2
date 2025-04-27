@@ -52,15 +52,19 @@ def read_blocklist(name):
     """Download a blocklist."""
 
     logging.info("Loading blocklist: %s", name)
-    url = f"http://list.iblocklist.com/?list={name}&" "fileformat=p2p&archiveformat=gz"
+    url = (f"http://list.iblocklist.com/?list={name}&"
+           "fileformat=p2p&archiveformat=gz")
     p2p_re = re.compile(
-        r"(?P<name>.+):(?P<range_start>" + RE_IP + ")" r"-(?P<range_end>" + RE_IP + ")$"
+        r"(?P<name>.+):(?P<range_start>" + RE_IP + ")"
+        r"-(?P<range_end>" + RE_IP + ")$"
     )
 
     addr_list = []
 
     logging.debug("Blocklist URL: %s", url)
-    with gzip.open(request.urlopen(url), mode="rt", encoding="utf-8") as stream:
+    with gzip.open(request.urlopen(url),
+                   mode="rt",
+                   encoding="utf-8") as stream:
         for line in stream:
             line = line.strip()
             if line.startswith("#") or line == "":
@@ -69,13 +73,111 @@ def read_blocklist(name):
             r = p2p_re.match(line)
             if r:
                 addr_list.append(
-                    (r.group("range_start"), r.group("range_end"), r.group("name"))
+                    (r.group("range_start"),
+                     r.group("range_end"),
+                     r.group("name"))
                 )
             else:
                 raise CLIError("Parse error: " + line)
 
     logging.info("Loaded %d entries", len(addr_list))
     return addr_list
+
+
+def download(blocklist, output_file, set_name):
+    """Download blocklists."""
+
+    addr_list = []
+
+    for b in blocklist:
+        addr_list += read_blocklist(b)
+
+    logging.info("Writing nftables config: %s", output_file)
+
+    with open(output_file, mode="w", encoding="utf-8") as ostream:
+        ostream.write(f"define {set_name}_init = {{\n")
+        for a in addr_list:
+            s, e, n = a
+
+            if s != e:
+                ostream.write(f"{s}-{e}, # {n}\n")
+            else:
+                ostream.write(f"{s}, # {n}\n")
+
+        ostream.write("}\n")
+
+
+def list_stats(output_file, family_name, table_name, counter_set_name):
+    """List blocking statistics."""
+
+    addr_list = []
+
+    with open(output_file, encoding="utf-8") as stream:
+        nft_re = re.compile(
+            r"^(?P<range_start>" + RE_IP + ")"
+            r"(?:-(?P<range_end>" + RE_IP + "))?, "
+            r"# (?P<name>.*)$"
+        )
+
+        for ln in stream:
+            r = nft_re.match(ln)
+            if r:
+                e = r.group("range_end") or r.group("range_start")
+                addr_list.append(
+                    (
+                        ipaddress.ip_address(r.group("range_start")),
+                        ipaddress.ip_address(e),
+                        r.group("name").strip(),
+                    )
+                )
+
+    res = subprocess.run(
+        [NFT_PATH, "list", "set",
+         family_name, table_name, counter_set_name],
+        capture_output=True,
+        check=True,
+        encoding="utf-8",
+    )
+
+    nft_output = res.stdout
+
+    logging.warning("Blocklist hit statistics:")
+
+    hit_list = []
+    counter_re = re.compile(
+        r" (?P<ip>" + RE_IP + r") counter packets "
+        r"(?P<packets>\d+) bytes (?P<bytes>\d+)[, ]"
+    )
+
+    for entry in re.finditer(counter_re, nft_output):
+        hit_list.append(
+            {
+                "ip": entry.group("ip"),
+                "packets": int(entry.group("packets")),
+                "bytes": int(entry.group("bytes")),
+            }
+        )
+
+    addr_list.sort(key=lambda a: a[1])
+    addr_keys = [a[1] for a in addr_list]
+    hit_list.sort(key=lambda c: c["packets"], reverse=True)
+
+    for counter in hit_list:
+        ip = ipaddress.ip_address(counter["ip"])
+        name = "unknown"
+        lb = bisect.bisect_left(addr_keys, ip)
+        for i in range(lb, len(addr_list)):
+            if addr_list[i][0] <= ip <= addr_list[i][1]:
+                name = addr_list[i][2]
+                break
+
+        logging.warning(
+            "%s %s packets: %d bytes: %d",
+            name,
+            counter["ip"],
+            counter["packets"],
+            counter["bytes"],
+        )
 
 
 def main(argv=None):  # IGNORE:C0111
@@ -88,14 +190,17 @@ def main(argv=None):  # IGNORE:C0111
 
     program_version = f"v{__version__}"
     program_build_date = str(__updated__)
-    program_version_message = f"%(prog)s {program_version} ({program_build_date})"
+    program_version_message = (
+        f"%(prog)s {program_version} ({program_build_date})"
+    )
     program_shortdesc = __import__("__main__").__doc__.split("\n")[1]
     program_license = f"""{program_shortdesc}
 """
 
     # Setup argument parser
     parser = ArgumentParser(
-        description=program_license, formatter_class=RawDescriptionHelpFormatter
+        description=program_license,
+        formatter_class=RawDescriptionHelpFormatter
     )
     parser.add_argument(
         "-d",
@@ -167,13 +272,7 @@ def main(argv=None):  # IGNORE:C0111
     # Process arguments
     args = parser.parse_args()
 
-    output_file = args.output_file
-    blocklist = args.blocklist
     verbose = args.verbose
-    family_name = args.family
-    table_name = args.table
-    set_name = args.set
-    counter_set_name = args.counter_set
 
     if verbose is None:
         log_level = logging.WARNING
@@ -187,96 +286,11 @@ def main(argv=None):  # IGNORE:C0111
     logging.basicConfig(format="%(message)s", level=log_level)
 
     if args.download:
-        addr_list = []
-
-        for b in blocklist:
-            addr_list += read_blocklist(b)
-
-        logging.info("Writing nftables config: %s", output_file)
-
-        with open(output_file, mode="w", encoding="utf-8") as ostream:
-            ostream.write(f"define {set_name}_init = {{\n")
-            for a in addr_list:
-                s, e, n = a
-
-                if s != e:
-                    ostream.write(f"{s}-{e}, # {n}\n")
-                else:
-                    ostream.write(f"{s}, # {n}\n")
-
-            ostream.write("}\n")
-
+        download(args.blocklist, args.output_file, args.set)
         return 0
 
     if args.list_stats:
-        addr_list = []
-
-        with open(output_file, encoding="utf-8") as stream:
-            nft_re = re.compile(
-                r"^(?P<range_start>" + RE_IP + ")"
-                r"(?:-(?P<range_end>" + RE_IP + "))?, "
-                r"# (?P<name>.*)$"
-            )
-
-            for ln in stream:
-                r = nft_re.match(ln)
-                if r:
-                    e = r.group("range_end") or r.group("range_start")
-                    addr_list.append(
-                        (
-                            ipaddress.ip_address(r.group("range_start")),
-                            ipaddress.ip_address(e),
-                            r.group("name").strip(),
-                        )
-                    )
-
-        res = subprocess.run(
-            [NFT_PATH, "list", "set", family_name, table_name, counter_set_name],
-            capture_output=True,
-            check=True,
-            encoding="utf-8",
-        )
-
-        nft_output = res.stdout
-
-        logging.warning("Blocklist hit statistics:")
-
-        hit_list = []
-        counter_re = re.compile(
-            r" (?P<ip>" + RE_IP + r") counter packets "
-            r"(?P<packets>\d+) bytes (?P<bytes>\d+)[, ]"
-        )
-
-        for entry in re.finditer(counter_re, nft_output):
-            hit_list.append(
-                {
-                    "ip": entry.group("ip"),
-                    "packets": int(entry.group("packets")),
-                    "bytes": int(entry.group("bytes")),
-                }
-            )
-
-        addr_list.sort(key=lambda a: a[1])
-        addr_keys = [a[1] for a in addr_list]
-        hit_list.sort(key=lambda c: c["packets"], reverse=True)
-
-        for counter in hit_list:
-            ip = ipaddress.ip_address(counter["ip"])
-            name = "unknown"
-            lb = bisect.bisect_left(addr_keys, ip)
-            for i in range(lb, len(addr_list)):
-                if addr_list[i][0] <= ip <= addr_list[i][1]:
-                    name = addr_list[i][2]
-                    break
-
-            logging.warning(
-                "%s %s packets: %d bytes: %d",
-                name,
-                counter["ip"],
-                counter["packets"],
-                counter["bytes"],
-            )
-
+        list_stats(args.output_file, args.family, args.table, args.counter_set)
         return 0
 
     parser.print_help()
